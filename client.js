@@ -1,3 +1,33 @@
+console.time("connecting")
+console.time("loading")
+// image stuff
+let last_prompt = null;
+let last_seed = null;
+
+async function getPrompt() {
+  console.log("getting prompt")
+  var prompt = document.getElementById("prompt");
+  var seed = document.getElementById("seed");
+  while (true) {
+    console.log("checking if prompt")
+    if (prompt && prompt.value) {
+      if (prompt.value != last_prompt || seed.value != last_seed) {
+        last_prompt = prompt.value;
+        last_seed = seed;
+        console.log("got prompt")
+        return JSON.stringify({ prompt: prompt.value, seed: seed.value });
+      }
+    }
+    await new Promise((r) => setTimeout(r, 100));
+  }
+}
+
+
+
+// webrtc stuff
+
+
+
 // get DOM elements
 var dataChannelLog = document.getElementById('data-channel'),
     iceConnectionLog = document.getElementById('ice-connection-state'),
@@ -15,9 +45,10 @@ function createPeerConnection() {
         sdpSemantics: 'unified-plan'
     };
 
-    if (document.getElementById('use-stun').checked) {
-        config.iceServers = [{urls: ['stun:stun.l.google.com:19302']}];
-    }
+    //if (document.getElementById('use-stun').checked) {
+        //hm
+    //    config.iceServers = [{urls: ['stun:stun.l.google.com:19302']}];
+    //}
 
     pc = new RTCPeerConnection(config);
 
@@ -88,13 +119,39 @@ function negotiate() {
         document.getElementById('answer-sdp').textContent = answer.sdp;
         return pc.setRemoteDescription(answer);
     }).catch(function(e) {
+        console.log(e)
         alert(e);
     });
 }
 
-function start() {
-    document.getElementById('start').style.display = 'none';
+function sendPrompt(datachannel) {
+    console.log("sending prompt")
+    getPrompt().then((prompt) => {
+        console.log("got prompt, actually sending")
+        dataChannelLog.textContent += '> ' + prompt + '\n';
+        dc.send(prompt);
+    })
+}
 
+function handleImage(data, dc) {
+  console.log("handling image")
+  var top = document.getElementById("imoge");
+  var bottom = document.getElementById("imoge2");
+  if (top.style.opacity == 1) {
+    bottom.src = data;
+    bottom.style.opacity = 1;
+    top.style.opacity = 0;
+  } else {
+    top.src = data;
+    top.style.opacity = 1;
+    bottom.style.opacity = 0;
+  }
+  sendPrompt(dc);
+}
+
+
+function start() {
+    console.time("starting")
     pc = createPeerConnection();
 
     var time_start = null;
@@ -108,43 +165,41 @@ function start() {
         }
     }
 
-    if (document.getElementById('use-datachannel').checked) {
-        var parameters = JSON.parse(document.getElementById('datachannel-parameters').value);
+    // {"ordered": false, "maxRetransmits": 0}
 
-        dc = pc.createDataChannel('chat', parameters);
-        dc.onclose = function() {
-            clearInterval(dcInterval);
-            dataChannelLog.textContent += '- close\n';
-        };
-        dc.onopen = function() {
-            dataChannelLog.textContent += '- open\n';
-            dcInterval = setInterval(function() {
-                var message = 'ping ' + current_stamp();
-                dataChannelLog.textContent += '> ' + message + '\n';
-                dc.send(message);
-            }, 1000);
-            document.getElementById("send").onclick = (event) => {
-                var message = document.getElementById("text").value
-                dataChannelLog.textContent += '> ' + message + '\n';
-                dc.send(message);
-            }
-        };
-        dc.onmessage = function(evt) {
-            dataChannelLog.textContent += '< ' + evt.data + '\n';
-            if (evt.data[0] === "{") {
-                data = JSON.parse(evt.data)
-                image = data?.image
-            }
-            if (evt.data.substring(0, 4) === 'pong') {
-                var elapsed_ms = current_stamp() - parseInt(evt.data.substring(5), 10);
-                dataChannelLog.textContent += ' RTT ' + elapsed_ms + ' ms\n';
-            }
-        };
-    }
-
+    // {"ordered": false, "maxPacketLifetime": 500}
+    dc = pc.createDataChannel('chat', {ordered: true});
+    dc.onclose = function() {
+        clearInterval(dcInterval);
+        dataChannelLog.textContent += '- close\n';
+    };
+    dc.onopen = function() {
+        console.log("onopen")
+        dataChannelLog.textContent += '- open\n';
+        dcInterval = setInterval(function() {
+            var message = 'ping ' + current_stamp();
+            dataChannelLog.textContent += '> ' + message + '\n';
+            dc.send(message);
+        }, 1000);
+        sendPrompt(dc);
+        console.log("started sending prompt")
+        console.timeEnd("connecting")
+    };
+    dc.onmessage = function(evt) {
+        dataChannelLog.textContent += '< ' + evt.data + '\n';
+        if (evt.data.substring(0, 22) === "data:image/webp;base64"){
+            handleImage(evt.data, dc)
+        }
+        if (evt.data.substring(0, 4) === 'pong') {
+            var elapsed_ms = current_stamp() - parseInt(evt.data.substring(5), 10);
+            dataChannelLog.textContent += ' RTT ' + elapsed_ms + ' ms\n';
+        }
+    };
+    
     negotiate();
 
     document.getElementById('stop').style.display = 'inline-block';
+    console.timeEnd("starting")
 }
 
 function stop() {
@@ -175,63 +230,6 @@ function stop() {
     }, 500);
 }
 
-function sdpFilterCodec(kind, codec, realSdp) {
-    var allowed = []
-    var rtxRegex = new RegExp('a=fmtp:(\\d+) apt=(\\d+)\r$');
-    var codecRegex = new RegExp('a=rtpmap:([0-9]+) ' + escapeRegExp(codec))
-    var videoRegex = new RegExp('(m=' + kind + ' .*?)( ([0-9]+))*\\s*$')
-    
-    var lines = realSdp.split('\n');
+start()
+console.timeEnd("loading")
 
-    var isKind = false;
-    for (var i = 0; i < lines.length; i++) {
-        if (lines[i].startsWith('m=' + kind + ' ')) {
-            isKind = true;
-        } else if (lines[i].startsWith('m=')) {
-            isKind = false;
-        }
-
-        if (isKind) {
-            var match = lines[i].match(codecRegex);
-            if (match) {
-                allowed.push(parseInt(match[1]));
-            }
-
-            match = lines[i].match(rtxRegex);
-            if (match && allowed.includes(parseInt(match[2]))) {
-                allowed.push(parseInt(match[1]));
-            }
-        }
-    }
-
-    var skipRegex = 'a=(fmtp|rtcp-fb|rtpmap):([0-9]+)';
-    var sdp = '';
-
-    isKind = false;
-    for (var i = 0; i < lines.length; i++) {
-        if (lines[i].startsWith('m=' + kind + ' ')) {
-            isKind = true;
-        } else if (lines[i].startsWith('m=')) {
-            isKind = false;
-        }
-
-        if (isKind) {
-            var skipMatch = lines[i].match(skipRegex);
-            if (skipMatch && !allowed.includes(parseInt(skipMatch[2]))) {
-                continue;
-            } else if (lines[i].match(videoRegex)) {
-                sdp += lines[i].replace(videoRegex, '$1 ' + allowed.join(' ')) + '\n';
-            } else {
-                sdp += lines[i] + '\n';
-            }
-        } else {
-            sdp += lines[i] + '\n';
-        }
-    }
-
-    return sdp;
-}
-
-function escapeRegExp(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
-}

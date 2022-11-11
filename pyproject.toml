@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "stable-diffusion-live"
+name = "mirrorframe"
 version = "0.1.0"
 description = ""
 authors = ["various"]
@@ -11,6 +11,7 @@ aitemplate = {url = "https://r2-public-worker.drysys.workers.dev/aitemplate-0.1.
 transformers = "*"
 diffusers = "*"
 aiohttp = {extras = ["speedups"], version="*"}
+aiortc = "*"
 
 [tool.poetry.dev-dependencies]
 
