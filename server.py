@@ -1,85 +1,110 @@
-# Copyright (c) 2022 Dryad Systems
+import argparse
+import asyncio
+import json
 import logging
 import os
-import base64
-import json
-import time
-from io import BytesIO
-import torch
+import ssl
+import uuid
+
 from aiohttp import web
-from pipeline_stable_diffusion_ait import StableDiffusionAITPipeline
 
-logging.getLogger().setLevel("DEBUG")
-script = open("client.js").read()
+from aiortc import RTCPeerConnection, RTCSessionDescription
 
-html = (
-    f"<!DOCTYPE HTML><head><script>{script}</script>"
-    """
-    <style>img { transition:opacity 1s linear; position: absolute; top:5%; left: 25%; width:512px;height: 512px}</style>
-    </head>
-    <div style = "margin: 5%">
-        <img id="imoge" alt="imoge" src="" style="opacity:0;"><br/>
-        <img id="imoge2" alt="imoge" src="" style="opacity:1;"><br/>
-        <textarea id="prompt" name="prompt" value=""></textarea><br/>
-        <input id="seed" name="seed" value="42">
-    </div>
-    """
-)
+ROOT = os.path.dirname(__file__)
+
+logger = logging.getLogger("pc")
+pcs = set()
+
+async def index(request):
+    content = open(os.path.join(ROOT, "index.html"), "r").read()
+    return web.Response(content_type="text/html", text=content)
 
 
-class Live:
-    def __init__(self) -> None:
-        token = os.getenv("HF_TOKEN")
-        args: dict = {"use_auth_token": token} if token else {"local_files_only": True}
-        self.txt_pipe = StableDiffusionAITPipeline.from_pretrained(
-            "CompVis/stable-diffusion-v1-4",
-            revision="fp16",
-            torch_dtype=torch.float16,
-            safety_checker=None,
-            **args,
-        ).to("cuda")
-
-    def generate(self, params: dict) -> str:
-        shared_params = {
-            "prompt": params["prompt"],
-            # maybe use num_images_per_prompt? think about batch v serial
-            "height": params.get("height", 512),
-            "width": params.get("width", 512),
-            "num_inference_steps": params.get("ddim_steps", 35),
-            "guidance_scale": params.get("scale", 7.5),
-        }
-        logging.info(params["prompt"])
-        rng = torch.Generator(device="cuda").manual_seed(int(params.get("seed", 42)))
-        start = time.time()
-        output = self.txt_pipe(generator=rng, **shared_params)
-        logging.info("took %s", round(time.time() - start, 3))
-        buf = BytesIO()
-        output.images[0].save(buf, format="webp")
-        buf.seek(0)
-        return f"data:image/webp;base64,{base64.b64encode(buf.read()).decode()}"
-
-    async def index(self, req: web.Request) -> web.Response:
-        return web.Response(body=html, content_type="text/html")
-
-    async def handle_ws(self, request: web.Request) -> web.Response:
-        ws = web.WebSocketResponse()
-        await ws.prepare(request)
-        logging.info("ws connected")
-        async for msg in ws:
-            # async with generate_lock:
-            image = self.generate(json.loads(msg.data))
-            await ws.send_str(image)
-        return ws
+async def javascript(request):
+    content = open(os.path.join(ROOT, "client.js"), "r").read()
+    return web.Response(content_type="application/javascript", text=content)
 
 
-app = web.Application()
-live = Live()
-app.add_routes(
-    [
-        web.route("*", "/", live.index),
-        web.get("/ws", live.handle_ws),
-    ]
-)
+async def offer(request):
+    params = await request.json()
+    offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
+
+    pc = RTCPeerConnection()
+    pc_id = "PeerConnection(%s)" % uuid.uuid4()
+    pcs.add(pc)
+
+    def log_info(msg, *args):
+        logger.info(pc_id + " " + msg, *args)
+
+    log_info("Created for %s", request.remote)
+
+    @pc.on("datachannel")
+    def on_datachannel(channel):
+        @channel.on("message")
+        def on_message(message):
+            if isinstance(message, str) and message.startswith("ping"):
+                channel.send("pong" + message[4:])
+
+    @pc.on("connectionstatechange")
+    async def on_connectionstatechange():
+        log_info("Connection state is %s", pc.connectionState)
+        if pc.connectionState == "failed":
+            await pc.close()
+            pcs.discard(pc)
+
+
+    # handle offer
+    await pc.setRemoteDescription(offer)
+
+    # send answer
+    answer = await pc.createAnswer()
+    await pc.setLocalDescription(answer)
+
+    return web.Response(
+        content_type="application/json",
+        text=json.dumps(
+            {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
+        ),
+    )
+
+
+async def on_shutdown(app):
+    # close peer connections
+    coros = [pc.close() for pc in pcs]
+    await asyncio.gather(*coros)
+    pcs.clear()
+
 
 if __name__ == "__main__":
-    web.run_app(app, port=8080, host="0.0.0.0")
+    parser = argparse.ArgumentParser(
+    )
+    parser.add_argument("--cert-file", help="SSL certificate file (for HTTPS)")
+    parser.add_argument("--key-file", help="SSL key file (for HTTPS)")
+    parser.add_argument(
+        "--host", default="0.0.0.0", help="Host for HTTP server (default: 0.0.0.0)"
+    )
+    parser.add_argument(
+        "--port", type=int, default=8080, help="Port for HTTP server (default: 8080)"
+    )
+    parser.add_argument("--verbose", "-v", action="count")
+    args = parser.parse_args()
+
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
+
+    if args.cert_file:
+        ssl_context = ssl.SSLContext()
+        ssl_context.load_cert_chain(args.cert_file, args.key_file)
+    else:
+        ssl_context = None
+
+    app = web.Application()
+    app.on_shutdown.append(on_shutdown)
+    app.router.add_get("/", index)
+    app.router.add_get("/client.js", javascript)
+    app.router.add_post("/offer", offer)
+    web.run_app(
+        app, access_log=None, host=args.host, port=args.port, ssl_context=ssl_context
+    )
