@@ -40,14 +40,14 @@ function handleImage(data) {
 function sendPrompt() {
   getPrompt().then((prompt) => {
     if (dc !== null && dc_open) {
-      console.log("got prompt, actually sending over ws");
+      console.log("got prompt, actually sending over rtc");
       dataChannelLog.textContent += "> " + prompt + "\n";
       dc.send(prompt);
     } else if (ws && ws.readyState === 1) {
       console.log("sending over ws");
       ws.send(prompt);
     } else {
-        console.log("no connections open")
+      console.log("no connections open");
     }
   });
 }
@@ -278,11 +278,11 @@ ws.addEventListener("message", ({ data }) => {
   }
 });
 ws.addEventListener("close", (event) => {
-  console.log("ws closed")
+  console.log("ws closed");
   ws_open = false;
 });
 
 //new Promise((r) => setTimeout(r, 10000)).then(() =>
-  start()
+start();
 //);
 console.timeEnd("loading");
