@@ -68,15 +68,20 @@ class Live:
         return web.Response(body=open("client.js").read(), content_type="application/javascript")
         return web.Response(body=script, content_type="application/javascript")
 
-    # async def handle_ws(self, request: web.Request) -> web.Response:
-    #     ws = web.WebSocketResponse()
-    #     await ws.prepare(request)
-    #     logging.info("ws connected")
-    #     async for msg in ws:
-    #         # async with generate_lock:
-    #         image = self.generate(json.loads(msg.data))
-    #         await ws.send_str(image)
-    #     return ws
+    async def handle_ws(self, request: web.Request) -> web.Response:
+        ws = web.WebSocketResponse()
+        await ws.prepare(request)
+        logging.info("ws connected")
+        async for msg in ws:
+            print(msg)
+            if isinstance(msg.data, str) and msg.data.startswith("ping"):
+                await ws.send_str("pong" + msg.data[4:])
+            else:
+            # async with generate_lock:
+                image = self.generate(json.loads(msg.data))
+                await ws.send_str(image)
+        print("websocket disconnected")
+        return ws
 
     async def offer(self, request: web.Request) -> web.Response:
         print("handling offer")
@@ -143,7 +148,7 @@ app.add_routes(
         web.route("*", "/", live.index),
         web.route("*", "/client.js", live.js),
         web.post("/offer", live.offer),
-        #web.get("/ws", live.handle_ws),
+        web.get("/ws", live.handle_ws),
     ]
 )
 
