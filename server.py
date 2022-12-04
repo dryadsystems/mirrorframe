@@ -32,7 +32,7 @@ class Live:
         token = os.getenv("HF_TOKEN")
         args: dict = {"use_auth_token": token} if token else {"local_files_only": True}
         self.txt_pipe = StableDiffusionAITPipeline.from_pretrained(
-            "CompVis/stable-diffusion-v1-4",
+            "stabilityai/stable-diffusion-2-base",
             revision="fp16",
             torch_dtype=torch.float16,
             safety_checker=None,
