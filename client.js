@@ -15,6 +15,7 @@ async function getPrompt() {
       if (prompt.value != last_prompt || seed.value != last_seed) {
         last_prompt = prompt.value;
         last_seed = seed;
+        console.time("generation")
         return JSON.stringify({ prompt: prompt.value, seed: seed.value });
       }
     }
@@ -23,6 +24,7 @@ async function getPrompt() {
 }
 
 ws.addEventListener("message", ({ data }) => {
+  console.timeEnd("generation")
   var top = document.getElementById("imoge");
   var bottom = document.getElementById("imoge2");
   if (top.style.opacity == 1) {
