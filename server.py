@@ -21,7 +21,7 @@ html = (
         <img id="imoge" alt="imoge" src="" style="opacity:0;"><br/>
         <img id="imoge2" alt="imoge" src="" style="opacity:1;"><br/>
         <textarea id="prompt" name="prompt" value=""></textarea><br/>
-        <!--<input id="seed" name="seed" value="42">-->
+        <input id="seed" name="seed" value="42" type="hidden">
         latency: <span id="latency">n/a</span>s<br/>
     </div>
     """
