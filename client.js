@@ -16,7 +16,7 @@ async function getPrompt() {
       if (prompt.value != last_prompt || seed.value != last_seed) {
         last_prompt = prompt.value;
         last_seed = seed;
-        last_send = Date.now()
+        last_sent = Date.now()
         console.time("generation")
         return JSON.stringify({ prompt: prompt.value, seed: seed.value });
       }
