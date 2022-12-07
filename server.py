@@ -21,7 +21,8 @@ html = (
         <img id="imoge" alt="imoge" src="" style="opacity:0;"><br/>
         <img id="imoge2" alt="imoge" src="" style="opacity:1;"><br/>
         <textarea id="prompt" name="prompt" value=""></textarea><br/>
-        <input id="seed" name="seed" value="42">
+        <!--<input id="seed" name="seed" value="42">-->
+        latency: <span id="latency">n/a</span>s<br/>
     </div>
     """
 )
@@ -71,6 +72,27 @@ class Live:
             await ws.send_str(image)
         return ws
 
+    async def handle_endpoint(self, request: web.Request) -> web.Response:
+        params = await request.json()
+        prompt = params["text_prompts"][0]["text"]
+        shared_params = {
+            "prompt": prompt,
+            # maybe use num_images_per_prompt? think about batch v serial
+            "height": params.get("height", 512),
+            "width": params.get("width", 512),
+            "num_inference_steps": params.get("steps", 35),
+            "guidance_scale": params.get("cfg_scale", 7.5),
+        }
+        rng = torch.Generator(device="cuda").manual_seed(int(params.get("seed", 42)))
+        start = time.time()
+        output = self.txt_pipe(generator=rng, **shared_params)
+        logging.info("took %s", round(time.time() - start, 3))
+        buf = BytesIO()
+        output.images[0].save(buf, format="png")
+        buf.seek(0)
+        resp = web.Response(body=buf.read(), content_type="image/png")
+        # resp.enable_compression(force=True)
+        return resp
 
 app = web.Application()
 live = Live()
@@ -78,6 +100,10 @@ app.add_routes(
     [
         web.route("*", "/", live.index),
         web.get("/ws", live.handle_ws),
+        web.post(
+            "/v1alpha/generation/stable-diffusion-512-v2-0/text-to-image",
+            live.handle_endpoint,
+        ),
     ]
 )
 
