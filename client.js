@@ -22,8 +22,8 @@ async function getPrompt() {
       if (prompt.value != last_prompt || seed.value != last_seed) {
         last_prompt = prompt.value;
         last_seed = seed;
-        last_sent = Date.now()
-        console.time("generation")
+        last_sent = Date.now();
+        console.time("generation");
         return JSON.stringify({ prompt: prompt.value, seed: seed.value });
       }
     }
@@ -31,8 +31,8 @@ async function getPrompt() {
   }
 }
 
-ws.addEventListener("message", ({ data }) => {
-  var parsed = JSON.parse(data);
+ws.addEventListener("message", ({ message }) => {
+  var data = JSON.parse(message);
   var latency = Date.now() - last_sent - data.gen_time;
   var latencyField = document.getElementById("latency");
   latencyField.textContent = `latency: ${latency}ms. generation: ${data.gen_time}s`;
@@ -53,4 +53,3 @@ ws.addEventListener("message", ({ data }) => {
 new Promise((r) => setTimeout(r, 100)).then(() =>
   getPrompt().then((t) => ws.send(t))
 );
-
