@@ -22,7 +22,7 @@ html = (
         <img id="imoge2" alt="imoge" src="" style="opacity:1;"><br/>
         <textarea id="prompt" name="prompt" value=""></textarea><br/>
         <input id="seed" name="seed" value="42" type="hidden">
-        latency: <span id="latency">n/a</span>s<br/>
+        <span id="latency"></span><br/>
     </div>
     """
 )
@@ -57,7 +57,11 @@ class Live:
         buf = BytesIO()
         output.images[0].save(buf, format="webp")
         buf.seek(0)
-        return f"data:image/webp;base64,{base64.b64encode(buf.read()).decode()}"
+        resp = {
+            "gen_time": time.time() - start,
+            "image": f"data:image/webp;base64,{base64.b64encode(buf.read()).decode()}",
+        }
+        return json.dumps(resp)
 
     async def index(self, req: web.Request) -> web.Response:
         return web.Response(body=html, content_type="text/html")
@@ -93,6 +97,7 @@ class Live:
         resp = web.Response(body=buf.read(), content_type="image/png")
         # resp.enable_compression(force=True)
         return resp
+
 
 app = web.Application()
 live = Live()
