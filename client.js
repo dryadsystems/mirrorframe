@@ -31,19 +31,20 @@ async function getPrompt() {
   }
 }
 
-ws.addEventListener("message", ({ message }) => {
-  var data = JSON.parse(message);
-  var latency = Date.now() - last_sent - data.gen_time;
+ws.addEventListener("message", ({ data }) => {
+
+  var parsed= JSON.parse(data);
+  var latency = Date.now() - last_sent - parsed.gen_time;
   var latencyField = document.getElementById("latency");
-  latencyField.textContent = `latency: ${latency}ms. generation: ${data.gen_time}s`;
+  latencyField.textContent = `latency: ${latency}ms. generation: ${parsed.gen_time}s`;
   var top = document.getElementById("imoge");
   var bottom = document.getElementById("imoge2");
   if (top.style.opacity == 1) {
-    bottom.src = data.image;
+    bottom.src = parsed.image;
     bottom.style.opacity = 1;
     top.style.opacity = 0;
   } else {
-    top.src = data.image;
+    top.src = parsed.image;
     top.style.opacity = 1;
     bottom.style.opacity = 0;
   }

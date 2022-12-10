@@ -79,6 +79,7 @@ class Live:
     async def handle_endpoint(self, request: web.Request) -> web.Response:
         params = await request.json()
         prompt = params["text_prompts"][0]["text"]
+        start = time.time()
         shared_params = {
             "prompt": prompt,
             # maybe use num_images_per_prompt? think about batch v serial
@@ -93,6 +94,7 @@ class Live:
         logging.info("took %s", round(time.time() - start, 3))
         buf = BytesIO()
         output.images[0].save(buf, format="png")
+        print(f"took {time.time() - start}")
         buf.seek(0)
         resp = web.Response(body=buf.read(), content_type="image/png")
         # resp.enable_compression(force=True)
