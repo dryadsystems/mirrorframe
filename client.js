@@ -36,7 +36,7 @@ ws.addEventListener("message", ({ data }) => {
   var latency = Math.round(Date.now() - last_sent - parsed.gen_time * 1000);
   var latencyField = document.getElementById("latency");
   latencyField.textContent = `latency: ${latency}ms`;
-  document.getElementById("gen_time").textContent = `generation: ${parsed.gen_time}s`;
+  document.getElementById("gen_time").textContent = `generation: ${parsed.gen_time}ms`;
   var top = document.getElementById("imoge");
   var bottom = document.getElementById("imoge2");
   if (top.style.opacity == 1) {
