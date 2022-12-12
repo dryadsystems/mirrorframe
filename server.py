@@ -23,6 +23,7 @@ html = (
         <textarea id="prompt" name="prompt" value=""></textarea><br/>
         <input id="seed" name="seed" value="42" type="hidden">
         <span id="latency"></span><br/>
+        <span id="gen_time"></span><br/>
     </div>
     """
 )
@@ -58,7 +59,7 @@ class Live:
         output.images[0].save(buf, format="webp")
         buf.seek(0)
         resp = {
-            "gen_time": time.time() - start,
+            "gen_time": round(time.time() - start, 4),
             "image": f"data:image/webp;base64,{base64.b64encode(buf.read()).decode()}",
         }
         return json.dumps(resp)

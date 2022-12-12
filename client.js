@@ -32,11 +32,11 @@ async function getPrompt() {
 }
 
 ws.addEventListener("message", ({ data }) => {
-
-  var parsed= JSON.parse(data);
-  var latency = Date.now() - last_sent - parsed.gen_time;
+  var parsed = JSON.parse(data);
+  var latency = Math.round(Date.now() - last_sent - parsed.gen_time * 1000);
   var latencyField = document.getElementById("latency");
-  latencyField.textContent = `latency: ${latency}ms. generation: ${parsed.gen_time}s`;
+  latencyField.textContent = `latency: ${latency}ms`;
+  document.getElementById("gen_time").textContent = `generation: ${parsed.gen_time}s`;
   var top = document.getElementById("imoge");
   var bottom = document.getElementById("imoge2");
   if (top.style.opacity == 1) {
