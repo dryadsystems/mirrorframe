@@ -1,22 +1,19 @@
 # Copyright (c) 2022 Dryad Systems
 import asyncio
 import base64
-import time
 import json
 import logging
 import os
-import ssl
 import time
 import uuid
 from io import BytesIO
 
-import torch
 import aiortc
+import torch
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
 
 from pipeline_stable_diffusion_ait import StableDiffusionAITPipeline
-
 
 ROOT = os.path.dirname(__file__)
 
@@ -113,7 +110,7 @@ class Live:
                     channel.send("pong" + message[4:])
                 if isinstance(message, str) and message[0] == "{":
                     print("will generate")
-                    image = self.generate(json.loads(msg.data))
+                    image = self.generate(json.loads(message.data))
                     print("sending")
                     channel.send(image)
 
