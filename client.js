@@ -31,9 +31,10 @@ async function getPrompt() {
 }
 
 function handleImage(data) {
+  waiting = false;
   console.log("handling image");
   var parsed = JSON.parse(data);
-  var latency = Math.round(Date.now() - last_sent - parsed.gen_time * 1000);
+  var latency = Math.round(Date.now() - last_sent - parsed.gen_time);
   var latencyField = document.getElementById("latency");
   latencyField.textContent = `latency: ${latency}ms`;
   document.getElementById("gen_time").textContent = `generation: ${parsed.gen_time}ms`;
@@ -51,18 +52,29 @@ function handleImage(data) {
   sendPrompt();
 }
 
+var sending = false;
+var waiting = false;
 function sendPrompt() {
+  sending = true;
   getPrompt().then((prompt) => {
-    if (dc !== null && dc_open) {
-      console.log("got prompt, actually sending over rtc");
-      dataChannelLog.textContent += "> " + prompt + "\n";
-      dc.send(prompt);
-    } else if (ws && ws.readyState === 1) {
-      console.log("sending over ws");
-      ws.send(prompt);
-    } else {
-      console.log("no connections open");
-    }
+    let interval = setInterval(function () {
+        if (dc !== null && dc_open) {
+          console.log("got prompt, actually sending over rtc");
+          dataChannelLog.textContent += "> " + prompt + "\n";
+          dc.send(prompt);
+          clearInterval(interval);
+          sending = false;
+          waiting = true;
+        } else if (ws && ws.readyState === 1) {
+          console.log("sending over ws");
+          ws.send(prompt);
+          clearInterval(interval);
+          sending = false;
+          waiting = true;
+        } else {
+          console.log("no connections open, retrying");
+        }
+    }, 1000);
   });
 }
 
@@ -217,7 +229,7 @@ function start() {
       dataChannelLog.textContent += "> " + message + "\n";
       dc.send(message);
     }, 1000);
-    sendPrompt(dc);
+    sendPrompt();
     console.log("started sending prompt");
     console.timeEnd("connecting");
   };
@@ -300,3 +312,8 @@ ws.addEventListener("close", (event) => {
 start();
 //);
 console.timeEnd("loading");
+
+
+//setInterval(function () {
+//  if (!sending && !waiting) { sendPrompt() }
+//}, 1000);
