@@ -110,7 +110,7 @@ class Live:
                     channel.send("pong" + message[4:])
                 if isinstance(message, str) and message[0] == "{":
                     print("will generate")
-                    image = self.generate(json.loads(message.data))
+                    image = self.generate(json.loads(message))
                     print("sending")
                     channel.send(image)
 
