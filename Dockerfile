@@ -23,5 +23,6 @@ COPY --from=model /root/.cache /root/.cache
 COPY --from=libbuilder /app/venv/lib/python3.10/site-packages /app/
 COPY ./modeling/ /app/modeling
 COPY ./pipeline_stable_diffusion_ait.py ./client.js ./index.html ./server.py /app/
+ENV DISABLE_TELEMETRY=YES
 EXPOSE 8080
 ENTRYPOINT ["/usr/local/bin/python3.10", "/app/server.py"]
