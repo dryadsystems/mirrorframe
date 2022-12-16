@@ -183,7 +183,7 @@ app.add_routes(
         web.route("*", "/client.js", live.js),
         web.post("/offer", live.offer),
         web.get("/ws", live.handle_ws),
-        web.get("ws-only.html", live.ws_only),
+        web.get("/ws-only.html", live.ws_only),
         web.post(
             "/v1alpha/generation/stable-diffusion-512-v2-0/text-to-image",
             live.handle_endpoint,
