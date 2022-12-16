@@ -25,6 +25,7 @@ logging.getLogger().setLevel("DEBUG")
 script = open("client.js").read()
 html = open("index.html").read()
 
+
 class Live:
     def __init__(self) -> None:
         token = os.getenv("HF_TOKEN")
@@ -67,7 +68,11 @@ class Live:
         return web.Response(body=html, content_type="text/html")
 
     async def js(self, req: web.Request) -> web.Response:
-        return web.Response(body=open("client.js").read(), content_type="application/javascript")
+        return web.Response(
+            body=open("client.js").read(),
+            content_type="application/javascript",
+            headers={"Cache-Control": "No-Cache"},
+        )
         return web.Response(body=script, content_type="application/javascript")
 
     async def handle_ws(self, request: web.Request) -> web.Response:
@@ -79,7 +84,7 @@ class Live:
             if isinstance(msg.data, str) and msg.data.startswith("ping"):
                 await ws.send_str("pong" + msg.data[4:])
             else:
-            # async with generate_lock:
+                # async with generate_lock:
                 image = self.generate(json.loads(msg.data))
                 await ws.send_str(image)
         print("websocket disconnected")

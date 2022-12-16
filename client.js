@@ -238,8 +238,8 @@ function start() {
     if (evt.data.substring(0, 4) === "pong") {
       var elapsed_ms = current_stamp() - parseInt(evt.data.substring(5), 10);
       dataChannelLog.textContent += " RTT " + elapsed_ms + " ms\n";
-    } else {
-    // } if (evt.data.substring(0, 1) === "{") {
+    }
+    if (evt.data.substring(0, 1) === "{") {
       handleImage(evt.data);
     }
   };
