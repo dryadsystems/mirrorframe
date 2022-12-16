@@ -235,7 +235,7 @@ function start() {
   };
   dc.onmessage = function (evt) {
     dataChannelLog.textContent += "< " + evt.data + "\n";
-    if (evt.data.substring(0, 22) === "data:image/webp;base64") {
+    if (evt.data.substring(0, 1) === "{") {
       handleImage(evt.data);
     }
     if (evt.data.substring(0, 4) === "pong") {
