@@ -55,6 +55,10 @@ function handleImage(data) {
 var sending = false;
 var waiting = false;
 function sendPrompt() {
+  if (waiting) {
+      console.log("already waiting, not sending again")
+      return;
+  }
   sending = true;
   getPrompt().then((prompt) => {
     let interval = setInterval(function () {

@@ -1,0 +1,3 @@
+[submodule "mirror"]
+	path = mirror
+	url = git@github.com:dryadsystems/mirror
