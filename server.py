@@ -15,8 +15,6 @@ from aiortc import RTCPeerConnection, RTCSessionDescription
 
 from pipeline_stable_diffusion_ait import StableDiffusionAITPipeline
 
-ROOT = os.path.dirname(__file__)
-
 pc_logger = logging.getLogger("pc")
 pc_logger.setLevel("DEBUG")
 pcs = set()
@@ -61,6 +59,7 @@ class Live:
         resp = {
             "gen_time": round((time.time() - start) * 1000),
             "image": f"data:image/webp;base64,{base64.b64encode(buf.read()).decode()}",
+            "id": params.get("id"),
         }
         return json.dumps(resp)
 
@@ -173,8 +172,8 @@ class Live:
     async def ws_only(self, req: web.Request) -> web.Response:
         return web.FileResponse("./ws-only.html")
 
-    async def next_index(self, req: web.Request) -> web.Response:
-        return web.FileResponse("/app/next/index.html")
+    # async def next_index(self, req: web.Request) -> web.Response:
+    #     return web.FileResponse("/app/next/index.html")
 
 
 app = web.Application()
@@ -191,8 +190,8 @@ app.add_routes(
             "/v1alpha/generation/stable-diffusion-512-v2-0/text-to-image",
             live.handle_endpoint,
         ),
-        web.static("/", "/app/next"),
-        web.route("*", "/", live.next_index)
+        web.route("*", "/", live.next_index),
+        #web.static("/", "/app/next"),
     ]
 )
 

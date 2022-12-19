@@ -23,18 +23,19 @@ async function getPrompt() {
         console.log("got prompt");
         last_sent = Date.now();
         console.time("generation");
-        return JSON.stringify({ prompt: prompt.value, seed: seed.value });
+        return JSON.stringify({ prompt: prompt.value, seed: seed.value, id: last_sent });
       }
     }
     await new Promise((r) => setTimeout(r, 100));
   }
 }
 
+
 function handleImage(data) {
   waiting = false;
   console.log("handling image");
   var parsed = JSON.parse(data);
-  var latency = Math.round(Date.now() - last_sent - parsed.gen_time);
+  var latency = Math.round(Date.now() - parsed.id);
   var latencyField = document.getElementById("latency");
   latencyField.textContent = `latency: ${latency}ms`;
   document.getElementById("gen_time").textContent = `generation: ${parsed.gen_time}ms`;
