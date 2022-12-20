@@ -172,8 +172,8 @@ class Live:
     async def ws_only(self, req: web.Request) -> web.Response:
         return web.FileResponse("./ws-only.html")
 
-    # async def next_index(self, req: web.Request) -> web.Response:
-    #     return web.FileResponse("/app/next/index.html")
+    async def next_index(self, req: web.Request) -> web.Response:
+        return web.FileResponse("/app/next/index.html")
 
 
 app = web.Application()
@@ -191,7 +191,7 @@ app.add_routes(
             live.handle_endpoint,
         ),
         web.route("*", "/", live.next_index),
-        #web.static("/", "/app/next"),
+        web.static("/", "/app/next"),
     ]
 )
 
