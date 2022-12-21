@@ -49,7 +49,7 @@ class Live:
             "guidance_scale": params.get("scale", 7.5),
         }
         logging.info(params["prompt"])
-        rng = torch.Generator(device="cuda").manual_seed(int(params.get("seed", 42)))
+        rng = torch.Generator(device="cuda").manual_seed(int(params.get("seed", 420)))
         start = time.time()
         output = self.txt_pipe(generator=rng, **shared_params)
         logging.info("took %s", round(time.time() - start, 3))
