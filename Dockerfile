@@ -49,6 +49,7 @@ COPY --from=ait /workdir/tmp /app/tmp
 COPY --from=model /root/.cache /root/.cache
 COPY --from=libbuilder /app/venv/lib/python3.10/site-packages /app/
 COPY --from=next /app/out /app/next
+COPY ./detect_target.py /app/aitemplate/testing/detect_target.py
 COPY ./modeling/ /app/modeling
 COPY ./pipeline_stable_diffusion_ait.py ./client.js ./index.html ./ws-only.html ./server.py /app/
 ENV DISABLE_TELEMETRY=YES
