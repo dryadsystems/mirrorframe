@@ -23,6 +23,7 @@ logging.getLogger().setLevel("DEBUG")
 script = open("client.js").read()
 html = open("index.html").read()
 
+start = time.time()
 
 class Live:
     def __init__(self) -> None:
@@ -139,6 +140,14 @@ class Live:
             ),
         )
 
+    async def on_startup(self, app: web.Application) -> None:
+        launched = os.getenv("START")
+        if launched:
+            msg = f"mirror started after {int(start - int(launched))}s"
+            cs = aiohttp.ClientSession()
+            await cs.post("https://imogen-dryad.fly.dev/admin", data=msg)
+            await cs.post("https://imogen.fly.dev/admin", data=msg)
+
     async def on_shutdown(self, app: web.Application) -> None:
         # close peer connections
         coros = [pc.close() for pc in pcs]
@@ -178,6 +187,7 @@ class Live:
 
 app = web.Application()
 live = Live()
+app.on_startup.append(live.on_startup)
 app.on_shutdown.append(live.on_shutdown)
 app.add_routes(
     [
