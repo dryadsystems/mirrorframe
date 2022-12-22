@@ -10,6 +10,7 @@ from io import BytesIO
 
 import aiortc
 import torch
+import aiohttp
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
 
@@ -23,7 +24,8 @@ logging.getLogger().setLevel("DEBUG")
 script = open("client.js").read()
 html = open("index.html").read()
 
-start = time.time()
+server_start = time.time()
+
 
 class Live:
     def __init__(self) -> None:
@@ -36,6 +38,7 @@ class Live:
             safety_checker=None,
             **args,
         ).to("cuda")
+        self.connections = set()
 
     def generate(self, params: dict) -> str:
         # time.sleep(3)
@@ -79,6 +82,7 @@ class Live:
         ws = web.WebSocketResponse()
         await ws.prepare(request)
         logging.info("ws connected")
+        self.connections.add(ws)
         async for msg in ws:
             print(msg)
             if isinstance(msg.data, str) and msg.data.startswith("ping"):
@@ -88,6 +92,7 @@ class Live:
                 image = self.generate(json.loads(msg.data))
                 await ws.send_str(image)
         print("websocket disconnected")
+        self.connections.discard(ws)
         return ws
 
     async def offer(self, request: web.Request) -> web.Response:
@@ -143,7 +148,7 @@ class Live:
     async def on_startup(self, app: web.Application) -> None:
         launched = os.getenv("START")
         if launched:
-            msg = f"mirror started after {int(start - int(launched))}s"
+            msg = f"mirror started after {int(server_start - int(launched))}s"
             cs = aiohttp.ClientSession()
             await cs.post("https://imogen-dryad.fly.dev/admin", data=msg)
             await cs.post("https://imogen.fly.dev/admin", data=msg)
@@ -183,6 +188,9 @@ class Live:
 
     async def next_index(self, req: web.Request) -> web.Response:
         return web.FileResponse("/app/next/index.html")
+
+    async def conn_count(self, req: web.Request) -> web.Response:
+        return web.Response(body=str(len(pcs) + len(self.connections)))
 
 
 app = web.Application()
