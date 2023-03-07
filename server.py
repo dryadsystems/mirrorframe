@@ -145,13 +145,30 @@ class Live:
             ),
         )
 
+    last_gen = time.time()
+
     async def on_startup(self, app: web.Application) -> None:
         launched = os.getenv("START")
+        cs = aiohttp.ClientSession()
         if launched:
             msg = f"mirror started after {int(server_start - int(launched))}s"
-            cs = aiohttp.ClientSession()
             await cs.post("https://imogen-dryad.fly.dev/admin", data=msg)
             await cs.post("https://imogen.fly.dev/admin", data=msg)
+        pod_id = os.getenv("RUNPOD_POD_ID")
+        while pod_id:
+            if time.time() - self.last_gen > 3600:
+                await cs.post(
+                    "https://imogen.fly.dev/admin",
+                    data="mirror shutting down after 1h inactivity",
+                )
+                query = 'mutation {podTerminate(input: {podId: "%s"})}' % pod_id
+                await cs.post(
+                    "https://api.runpod.io/graphql",
+                    params={"api_key": os.getenv("RUNPOD_API_KEY")},
+                    json={"query": query},
+                    headers={"Content-Type": "application/json"},
+                )
+                sys.exit()
 
     async def on_shutdown(self, app: web.Application) -> None:
         # close peer connections
