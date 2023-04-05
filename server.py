@@ -1,4 +1,7 @@
 # Copyright (c) 2022 Dryad Systems
+import os
+import nyacomp
+
 import asyncio
 import base64
 import json
@@ -31,13 +34,7 @@ class Live:
     def __init__(self) -> None:
         token = os.getenv("HF_TOKEN")
         args: dict = {"use_auth_token": token} if token else {"local_files_only": True}
-        self.txt_pipe = StableDiffusionAITPipeline.from_pretrained(
-            "stabilityai/stable-diffusion-2-base",
-            revision="fp16",
-            torch_dtype=torch.float16,
-            safety_checker=None,
-            **args,
-        ).to("cuda")
+        self.txt_pipe = nyacomp.load_compressed("model/sd_boneless.pth"),
         self.connections = set()
 
     def generate(self, params: dict) -> str:
