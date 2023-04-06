@@ -1,5 +1,8 @@
 # Copyright (c) 2022 Dryad Systems
 import os
+import time
+if os.getenv("BREAK"):
+    time.sleep(3600*24)
 import nyacomp
 
 import asyncio
@@ -7,8 +10,8 @@ import base64
 import json
 import logging
 import os
-import time
 import uuid
+from pathlib import Path
 from io import BytesIO
 
 import aiortc
@@ -16,7 +19,6 @@ import torch
 import aiohttp
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
-
 from pipeline_stable_diffusion_ait import StableDiffusionAITPipeline
 
 pc_logger = logging.getLogger("pc")
@@ -34,7 +36,7 @@ class Live:
     def __init__(self) -> None:
         token = os.getenv("HF_TOKEN")
         args: dict = {"use_auth_token": token} if token else {"local_files_only": True}
-        self.txt_pipe = nyacomp.load_compressed("model/sd_boneless.pth"),
+        self.txt_pipe = nyacomp.load_compressed(Path("model/boneless_sd.pth"))
         self.connections = set()
 
     def generate(self, params: dict) -> str:

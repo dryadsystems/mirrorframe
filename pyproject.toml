@@ -11,7 +11,7 @@ aitemplate = {url = "https://r2-public-worker.drysys.workers.dev/aitemplate-0.1.
 #nyacomp = {url = "https://r2-public-worker.drysys.workers.dev/nyacomp-0.0.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"}
 # install in dockerfile as a diff layer for ease
 transformers = "*"
-diffusers = ">=0.9"
+diffusers = "==0.10.2"
 aiohttp = {extras = ["speedups"], version="*"}
 aiortc = "*"
 

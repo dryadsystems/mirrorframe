@@ -43,17 +43,22 @@ RUN python3.10 -m venv /app/venv
 WORKDIR /app/
 COPY ./pyproject.toml /app/
 RUN VIRTUAL_ENV=/app/venv poetry install 
-RUN VIRTUAL_ENV=/app/venv pip install https://r2-public-worker.drysys.workers.dev/nyacomp-0.0.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+RUN mkdir nya
+ENV A=2
+RUN pip install -t nya https://r2-public-worker.drysys.workers.dev/nyacomp-0.0.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
 
 FROM python:3.10
 WORKDIR /app
 COPY --from=ait /workdir/tmp /app/tmp
 COPY --from=model /model /app/model
 COPY --from=libbuilder /app/venv/lib/python3.10/site-packages /app/
+COPY --from=libbuilder /app/nya/ /app/
 COPY --from=next /app/out /app/next
+RUN sed -i 's:/tmp/::' model/nya/meta.csv # oops
 COPY ./detect_target.py /app/aitemplate/testing/detect_target.py
 COPY ./modeling/ /app/modeling
 COPY ./pipeline_stable_diffusion_ait.py ./client.js ./index.html ./ws-only.html ./server.py /app/
+
 ENV DISABLE_TELEMETRY=YES
 ENV PRELOAD_PATH=/app/model/nya/meta.csv
 EXPOSE 8080
