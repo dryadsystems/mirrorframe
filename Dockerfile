@@ -26,11 +26,13 @@ RUN npm run export
 FROM appropriate/curl as model
 RUN curl -o nya.tar https://r2-public-worker.drysys.workers.dev/nya-sd-8-threads-2023-04-04-.tar
 #RUN curl -o stable-hf-cache.tar https://r2-public-worker.drysys.workers.dev/hf-cache-ait-verdant-2022-11-30.tar
+# &&
 RUN tar -xf nya.tar -C / # /model/nya?
 RUN ls /model
 
 FROM appropriate/curl as ait
 RUN curl -o ait-verdant.tar https://r2-public-worker.drysys.workers.dev/ait-verdant-2022-11-30.tar
+# &&
 RUN mkdir /workdir
 RUN tar -xf ait-verdant.tar -C /workdir
 
@@ -41,7 +43,7 @@ RUN python3.10 -m venv /app/venv
 WORKDIR /app/
 COPY ./pyproject.toml /app/
 RUN VIRTUAL_ENV=/app/venv poetry install 
-
+RUN VIRTUAL_ENV=/app/venv pip install https://r2-public-worker.drysys.workers.dev/nyacomp-0.0.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
 
 FROM python:3.10
 WORKDIR /app
@@ -53,5 +55,6 @@ COPY ./detect_target.py /app/aitemplate/testing/detect_target.py
 COPY ./modeling/ /app/modeling
 COPY ./pipeline_stable_diffusion_ait.py ./client.js ./index.html ./ws-only.html ./server.py /app/
 ENV DISABLE_TELEMETRY=YES
+ENV PRELOAD_PATH=/app/model/nya/meta.csv
 EXPOSE 8080
 ENTRYPOINT ["/usr/local/bin/python3.10", "/app/server.py"]
