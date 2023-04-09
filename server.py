@@ -160,6 +160,7 @@ class Live:
     async def idle_exit(self):
         pod_id = os.getenv("RUNPOD_POD_ID")
         while pod_id:
+            await asyncio.sleep(12000)
             if time.time() - self.last_gen > 3600:
                 await cs.post(
                     "https://imogen.fly.dev/admin",
