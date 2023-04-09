@@ -1,5 +1,9 @@
 # Copyright (c) 2022 Dryad Systems
 import os
+import time
+
+if os.getenv("BREAK"):
+    time.sleep(60 * 60 * 24)
 import nyacomp
 
 import asyncio
@@ -7,7 +11,6 @@ import base64
 import json
 import logging
 import os
-import time
 import uuid
 from io import BytesIO
 
@@ -34,7 +37,7 @@ class Live:
     def __init__(self) -> None:
         token = os.getenv("HF_TOKEN")
         args: dict = {"use_auth_token": token} if token else {"local_files_only": True}
-        self.txt_pipe = nyacomp.load_compressed("model/sd_boneless.pth"),
+        self.txt_pipe = nyacomp.load_compressed("model/boneless_sd.pth")
         self.connections = set()
 
     def generate(self, params: dict) -> str:
@@ -142,15 +145,19 @@ class Live:
             ),
         )
 
-    last_gen = time.time()
-
     async def on_startup(self, app: web.Application) -> None:
         launched = os.getenv("START")
-        cs = aiohttp.ClientSession()
         if launched:
+            cs = aiohttp.ClientSession()
             msg = f"mirror started after {int(server_start - int(launched))}s"
             await cs.post("https://imogen-dryad.fly.dev/admin", data=msg)
             await cs.post("https://imogen.fly.dev/admin", data=msg)
+        # idle exit needs to be in a task because all on_startups have to exit
+        asyncio.create_task(self.idle_exit())
+
+    last_gen = time.time()
+
+    async def idle_exit(self):
         pod_id = os.getenv("RUNPOD_POD_ID")
         while pod_id:
             if time.time() - self.last_gen > 3600:
