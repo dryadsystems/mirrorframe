@@ -1,6 +1,7 @@
 # Copyright (c) 2022 Dryad Systems
 import os
 import time
+server_start = time.time()
 if os.getenv("BREAK"):
     time.sleep(60 * 60 * 24)
 import nyacomp
@@ -29,7 +30,6 @@ logging.getLogger().setLevel("DEBUG")
 script = open("client.js").read()
 html = open("index.html").read()
 
-server_start = time.time()
 
 
 class Live:
@@ -148,7 +148,7 @@ class Live:
         launched = os.getenv("START")
         if launched:
             cs = aiohttp.ClientSession()
-            msg = f"mirror started after {int(server_start - int(launched))}s"
+            msg = f"mirror started {int(server_start - int(launched))}s after launch, took {time.time() - server_start:.3f}s to load"
             await cs.post("https://imogen-dryad.fly.dev/admin", data=msg)
             await cs.post("https://imogen.fly.dev/admin", data=msg)
         # idle exit needs to be in a task because all on_startups have to exit
