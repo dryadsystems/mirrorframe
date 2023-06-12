@@ -4,15 +4,12 @@ import time
 server_start = time.time()
 if os.getenv("BREAK"):
     time.sleep(60 * 60 * 24)
-import nyacomp
-
 import asyncio
 import base64
 import json
 import logging
 import os
 import uuid
-from pathlib import Path
 from io import BytesIO
 
 import aiortc
@@ -20,6 +17,7 @@ import torch
 import aiohttp
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
+
 from pipeline_stable_diffusion_ait import StableDiffusionAITPipeline
 
 pc_logger = logging.getLogger("pc")
@@ -30,13 +28,20 @@ logging.getLogger().setLevel("DEBUG")
 script = open("client.js").read()
 html = open("index.html").read()
 
+server_start = time.time()
 
 
 class Live:
     def __init__(self) -> None:
         token = os.getenv("HF_TOKEN")
         args: dict = {"use_auth_token": token} if token else {"local_files_only": True}
-        self.txt_pipe = nyacomp.load_compressed(Path("model/boneless_sd.pth"))
+        self.txt_pipe = StableDiffusionAITPipeline.from_pretrained(
+            "stabilityai/stable-diffusion-2-base",
+            revision="fp16",
+            torch_dtype=torch.float16,
+            safety_checker=None,
+            **args,
+        ).to("cuda")
         self.connections = set()
 
     def generate(self, params: dict) -> str:
