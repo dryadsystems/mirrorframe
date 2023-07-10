@@ -166,6 +166,7 @@ class Live:
                     data="mirror shutting down after 1h inactivity",
                 )
                 query = 'mutation {podTerminate(input: {podId: "%s"})}' % pod_id
+                # TODO: if we have a volume, suspend instead of exiting
                 await cs.post(
                     "https://api.runpod.io/graphql",
                     params={"api_key": os.getenv("RUNPOD_API_KEY")},
