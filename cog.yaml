@@ -1,0 +1,16 @@
+build:
+    python_version: "3.11"
+    python_packages:
+        - diffusers
+        - hf_transfer
+        - torch
+        - aiohttp[speedups]
+        - aiortc
+        # implicit deps
+        - transformers
+        - sentencepiece
+        - torchvision
+        - protobuf
+        - pillow
+        - accelerate
+predict: "predict.py:predict"
