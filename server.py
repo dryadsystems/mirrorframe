@@ -208,10 +208,11 @@ class Live:
         # resp.enable_compression(force=True)
         return resp
 
-    async def ws_only(self, req: web.Request) -> web.Response:
-        return web.FileResponse("./ws-only.html")
+    # async def ws_only(self, req: web.Request) -> web.Response:
+    #     return web.FileResponse("./ws-only.html")
 
     async def next_index(self, req: web.Request) -> web.Response:
+        # return web.FileResponse("/app/next/index.html")
         return web.FileResponse("/app/next/index.html")
 
     async def conn_count(self, req: web.Request) -> web.Response:

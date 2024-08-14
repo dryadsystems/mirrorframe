@@ -56,7 +56,7 @@ COPY --from=libbuilder /app/venv/lib/python3.11/site-packages /app/
 COPY --from=next /app/out /app/next
 # COPY ./detect_target.py /app/aitemplate/testing/detect_target.py
 # COPY ./modeling/ /app/modeling
-COPY ./client.js ./index.html ./ws-only.html ./server.py /app/
+COPY ./client.js ./index.html ./server.py /app/
 
 ENV DISABLE_TELEMETRY=YES
 ENV HF_HUB_ENABLE_HF_TRANSFER=YES
