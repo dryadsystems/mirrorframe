@@ -1,10 +1,11 @@
 # Copyright (c) 2022 Dryad Systems
 import os
 import time
+
 server_start = time.time()
 if os.getenv("BREAK"):
     time.sleep(60 * 60 * 24)
-import nyacomp
+# import nyacomp
 
 import asyncio
 import base64
@@ -20,7 +21,7 @@ import torch
 import aiohttp
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
-from pipeline_stable_diffusion_ait import StableDiffusionAITPipeline
+from diffusers import FluxPipeline
 
 pc_logger = logging.getLogger("pc")
 pc_logger.setLevel("DEBUG")
@@ -31,12 +32,14 @@ script = open("client.js").read()
 html = open("index.html").read()
 
 
-
 class Live:
     def __init__(self) -> None:
         token = os.getenv("HF_TOKEN")
-        args: dict = {"use_auth_token": token} if token else {"local_files_only": True}
-        self.txt_pipe = nyacomp.load_compressed(Path("model/boneless_sd.pth"))
+        args: dict = {"use_auth_token": token} if token else {}
+        # "local_files_only": True}
+        self.pipe = FluxPipeline.from_pretrained(
+            "black-forest-labs/FLUX.1-schnell", torch_dtype=torch.bfloat16, **args
+        )
         self.connections = set()
 
     def generate(self, params: dict) -> str:
@@ -48,8 +51,8 @@ class Live:
             # maybe use num_images_per_prompt? think about batch v serial
             "height": params.get("height", 512),
             "width": params.get("width", 512),
-            "num_inference_steps": params.get("ddim_steps", 35),
-            "guidance_scale": params.get("scale", 7.5),
+            "num_inference_steps": params.get("ddim_steps", 4),
+            "guidance_scale": params.get("scale", 0.5),
         }
         logging.info(params["prompt"])
         rng = torch.Generator(device="cuda").manual_seed(int(params.get("seed", 420)))
