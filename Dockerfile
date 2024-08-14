@@ -42,7 +42,8 @@ WORKDIR /app
 RUN python3.11 -m venv /app/venv 
 WORKDIR /app/
 #COPY ./pyproject.toml /app/
-RUN --mount=type=cache,target=/root/.cache/pip /app/venv/bin/pip install diffusers torch aiohttp[speedups] aiortc
+RUN --mount=type=cache,target=/root/.cache/pip /app/venv/bin/pip install diffusers transformers torch aiohttp[speedups] aiortc
+RUN --mount=type=cache,target=/root/.cache/pip /app/venv/bin/pip install sentencepiece hf_transfer torchvision protobuf pillow
 #RUN mkdir nya
 #RUN pip install -t nya https://r2-public-worker.drysys.workers.dev/nyacomp-0.0.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
 
@@ -58,6 +59,7 @@ COPY --from=next /app/out /app/next
 COPY ./client.js ./index.html ./ws-only.html ./server.py /app/
 
 ENV DISABLE_TELEMETRY=YES
+ENV HF_HUB_ENABLE_HF_TRANSFER=YES
 #ENV PRELOAD_PATH=/app/model/nya/meta.csv
 EXPOSE 8080
 ENTRYPOINT ["/usr/local/bin/python3.11", "/app/server.py"]
