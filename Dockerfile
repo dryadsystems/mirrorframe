@@ -43,7 +43,7 @@ RUN python3.11 -m venv /app/venv
 WORKDIR /app/
 #COPY ./pyproject.toml /app/
 RUN --mount=type=cache,target=/root/.cache/pip /app/venv/bin/pip install diffusers transformers torch aiohttp[speedups] aiortc
-RUN --mount=type=cache,target=/root/.cache/pip /app/venv/bin/pip install sentencepiece hf_transfer torchvision protobuf pillow
+RUN --mount=type=cache,target=/root/.cache/pip /app/venv/bin/pip install sentencepiece hf_transfer torchvision protobuf pillow accelerate
 #RUN mkdir nya
 #RUN pip install -t nya https://r2-public-worker.drysys.workers.dev/nyacomp-0.0.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
 
