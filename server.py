@@ -30,14 +30,14 @@ pcs = set()
 logging.getLogger().setLevel("DEBUG")
 script = open("client.js").read()
 html = open("index.html").read()
-
+NEXT = "/app/next"
 
 class Live:
     def __init__(self) -> None:
         token = os.getenv("HF_TOKEN")
         args: dict = {"use_auth_token": token} if token else {}
         # "local_files_only": True}
-        self.pipe = FluxPipeline.from_pretrained(
+        self.txt_pipe = FluxPipeline.from_pretrained(
             "black-forest-labs/FLUX.1-schnell", torch_dtype=torch.bfloat16, **args
         )
         self.connections = set()
@@ -212,8 +212,7 @@ class Live:
     #     return web.FileResponse("./ws-only.html")
 
     async def next_index(self, req: web.Request) -> web.Response:
-        # return web.FileResponse("/app/next/index.html")
-        return web.FileResponse("/app/next/index.html")
+        return web.FileResponse(f"{NEXT}/index.html")
 
     async def conn_count(self, req: web.Request) -> web.Response:
         return web.Response(body=str(len(pcs) + len(self.connections)))
@@ -229,13 +228,13 @@ app.add_routes(
         web.route("*", "/client.js", live.js),
         web.post("/offer", live.offer),
         web.get("/ws", live.handle_ws),
-        web.get("/ws-only", live.ws_only),
-        web.post(
-            "/v1alpha/generation/stable-diffusion-512-v2-0/text-to-image",
-            live.handle_endpoint,
-        ),
+        #web.get("/ws-only", live.ws_only),
+        # web.post(
+        #     "/v1alpha/generation/stable-diffusion-512-v2-0/text-to-image",
+        #     live.handle_endpoint,
+        # ),
         web.route("*", "/", live.next_index),
-        web.static("/", "/app/next"),
+        web.static("/", NEXT),
     ]
 )
 

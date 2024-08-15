@@ -59,7 +59,7 @@ COPY --from=next /app/out /app/next
 COPY ./client.js ./index.html ./server.py /app/
 
 ENV DISABLE_TELEMETRY=YES
-ENV HF_HUB_ENABLE_HF_TRANSFER=YES
+#ENV HF_HUB_ENABLE_HF_TRANSFER=YES
 #ENV PRELOAD_PATH=/app/model/nya/meta.csv
 EXPOSE 8080
 ENTRYPOINT ["/usr/local/bin/python3.11", "/app/server.py"]

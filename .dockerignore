@@ -5,5 +5,5 @@
 **/README.md
 **/.next
 **/.git
-**/out
+#**/out
 mirror/utils
